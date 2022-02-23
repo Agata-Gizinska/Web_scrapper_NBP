@@ -1,59 +1,74 @@
+#!/usr/bin/env python3
+
 # This program scraps info from Polish National Bank website about today's
-# currency rate (USD, EUR, CHF, GBP, JPY) to PLN, and prints the output in a table.
+# currency rate (USD, EUR, CHF, GBP, JPY) to PLN, and prints the output in
+# a table.
 
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
+import pandas
 import re
-from datetime import date
-
-today = date.today()
-bank_website = "https://www.nbp.pl/home.aspx?f=/kursy/kursya.html"
-headings = []
-content = []
-currency = ['dolar amerykański', 'euro', 'frank szwajcarski', 'funt szterling', 'jen (Japonia)']
+from datetime import datetime
 
 
-def extract_data(url):
+def scrap_and_print(url):
+    today = datetime.now().strftime('%d %B %Y %X')
+    headings = []
+    content = []
+    currency = {'USD': {'EN': 'american dollar', 'PL': 'dolar amerykański'},
+                'EUR': {'EN': 'euro', 'PL': 'euro'},
+                'CHF': {'EN': 'swiss franc', 'PL': 'frank szwajcarski'},
+                'GBP': {'EN': 'british pound sterling',
+                        'PL': 'funt szterling'},
+                'JPY': {'EN': 'japanese yen', 'PL': 'jen (Japonia)'}
+                }
+
+    # request HTML content from the website
     html_content = requests.get(url).text
+    # create soup
     soup = BeautifulSoup(html_content, 'lxml')
+    # find necessary website components
     table = soup.find('table', attrs={'class': 'nbptable'})
     body = table.find_all('tr')
+    # prepare initial data for output table
     head = body[0]
     body_rows = body[1:]
 
+    # process initial data to create output table column names
     for item in head.find_all('th'):
-        item = item.text.rstrip('\n')
+        item = item.text.rstrip('\n')  # strip new lines
         headings.append(item)
 
+    # process initial data to create clean data for column rows, which should
+    # contain only items specified in currency variable
     for row_num in range(len(body_rows)):
         row = []
+        # process data and append to row variable
         for row_item in body_rows[row_num].find_all('td'):
             entry = re.sub('(\xa0)|(\n)', '', row_item.text)
             row.append(entry)
-        while len(row) >= 1:
-            check = any(item in row for item in currency)
-            if check is True:
-                content.append(row)
-                break
-            elif row in content:
-                break
+        # check if row variable contains Polish name of searched currency
+        if len(row) >= 1:
+            row = [x for x in row for item in currency.values() for r in row
+                   if r in item.get('PL')]
+            if row:
+                content.append(row)  # if yes, append row to content
             else:
-                break
-    return headings, content
+                continue  # if no, continue iteration
 
-
-def show_results_in_table():
-    dataframe = pd.DataFrame(data=content, columns=headings)
+    # create a Dataframe for output table
+    dataframe = pandas.DataFrame(data=content, columns=headings)
     output = dataframe.head()
+    # move rows index by 1, so the output table begins from 1
     output.index += 1
-    print('Currency rates for date:', today)
+    # print output table
+    print('Currency rates for: ', today)
     print(output)
 
 
 def main():
-    extract_data(bank_website)
-    show_results_in_table()
+    bank_website = "https://www.nbp.pl/home.aspx?f=/kursy/kursya.html"
+    scrap_and_print(bank_website)
 
 
 if __name__ == '__main__':
