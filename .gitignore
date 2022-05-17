@@ -1,1 +1,3 @@
 *virtualenv
+*.pyc
+*.pytest_cache

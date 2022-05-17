@@ -11,6 +11,11 @@ import re
 from datetime import datetime
 
 
+def get_url():
+    bank_website = "https://www.nbp.pl/home.aspx?f=/kursy/kursya.html"
+    return bank_website
+
+
 def scrap_and_print(url):
     today = datetime.now().strftime('%d %B %Y %X')
     headings = []
@@ -67,8 +72,7 @@ def scrap_and_print(url):
 
 
 def main():
-    bank_website = "https://www.nbp.pl/home.aspx?f=/kursy/kursya.html"
-    scrap_and_print(bank_website)
+    scrap_and_print(get_url())
 
 
 if __name__ == '__main__':
