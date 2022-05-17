@@ -1,6 +1,6 @@
 import pytest
 import requests
-from .webscrap_currency_rate import scrap_and_print, main
+from webscrap_currency_rate import scrap_and_print, main
 
 
 def test_request_status(website):
